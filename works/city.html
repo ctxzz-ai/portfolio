@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Synth City</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: radial-gradient(circle at 40% 15%, #26124c, #05020d 70%);
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        font-family: 'Outfit', sans-serif;
+        color: rgba(255, 255, 255, 0.65);
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        font-size: clamp(0.5rem, 1.2vw, 0.75rem);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="city"></canvas>
+    <div class="overlay">Synth City</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('city');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x050319, 6, 16);
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(-6, 6, 6);
+
+      const cityGroup = new THREE.Group();
+      scene.add(cityGroup);
+
+      const gridHelper = new THREE.GridHelper(20, 40, 0x3720a8, 0x3720a8);
+      gridHelper.material.opacity = 0.15;
+      gridHelper.material.transparent = true;
+      cityGroup.add(gridHelper);
+
+      const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+      const emissiveMaterial = new THREE.MeshStandardMaterial({
+        color: 0x0b021d,
+        emissive: 0x6f4bff,
+        emissiveIntensity: 0.8,
+        metalness: 0.4,
+        roughness: 0.6,
+      });
+
+      const buildingCount = 180;
+      const instanced = new THREE.InstancedMesh(boxGeometry, emissiveMaterial, buildingCount);
+      const buildingData = [];
+
+      for (let i = 0; i < buildingCount; i += 1) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.pow(Math.random(), 1.5) * 5;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const baseHeight = Math.random() * 2.8 + 0.8;
+        const scaleX = Math.random() * 0.4 + 0.2;
+        const scaleZ = Math.random() * 0.4 + 0.2;
+        const rotation = Math.random() * Math.PI;
+        const phase = Math.random() * Math.PI * 2;
+        buildingData.push({ x, z, baseHeight, scaleX, scaleZ, rotation, phase });
+
+        const matrix = new THREE.Matrix4();
+        const quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotation);
+        const position = new THREE.Vector3(x, baseHeight / 2, z);
+        const scale = new THREE.Vector3(scaleX, baseHeight, scaleZ);
+        matrix.compose(position, quaternion, scale);
+        instanced.setMatrixAt(i, matrix);
+        instanced.setColorAt(i, new THREE.Color(`hsl(${180 + Math.random() * 120}, 70%, 60%)`));
+      }
+
+      instanced.instanceMatrix.needsUpdate = true;
+      if (instanced.instanceColor) {
+        instanced.instanceColor.needsUpdate = true;
+      }
+      cityGroup.add(instanced);
+
+      const spotLight = new THREE.SpotLight(0xff74dd, 2.2, 20, Math.PI / 5, 0.4, 1.2);
+      spotLight.position.set(4, 9, 2);
+      spotLight.target.position.set(0, 0, 0);
+      spotLight.castShadow = true;
+      cityGroup.add(spotLight);
+      cityGroup.add(spotLight.target);
+
+      const fillLight = new THREE.SpotLight(0x5ad7ff, 1.6, 18, Math.PI / 4, 0.6, 1.2);
+      fillLight.position.set(-5, 7, -4);
+      fillLight.target.position.set(0, 0, 0);
+      fillLight.castShadow = false;
+      cityGroup.add(fillLight);
+      cityGroup.add(fillLight.target);
+
+      scene.add(new THREE.AmbientLight(0x0f1035, 0.6));
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      const dummyMatrix = new THREE.Matrix4();
+      const dummyPosition = new THREE.Vector3();
+      const dummyQuaternion = new THREE.Quaternion();
+      const dummyScale = new THREE.Vector3();
+      const upAxis = new THREE.Vector3(0, 1, 0);
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+        cityGroup.rotation.y = elapsed * 0.15;
+
+        for (let i = 0; i < buildingCount; i += 1) {
+          const data = buildingData[i];
+          const wave = Math.sin(elapsed * 1.6 + data.phase) * 0.6 + 1.2;
+          const height = data.baseHeight * wave;
+          dummyPosition.set(data.x, height / 2, data.z);
+          dummyQuaternion.setFromAxisAngle(upAxis, data.rotation);
+          dummyScale.set(data.scaleX, height, data.scaleZ);
+          dummyMatrix.compose(dummyPosition, dummyQuaternion, dummyScale);
+          instanced.setMatrixAt(i, dummyMatrix);
+        }
+        instanced.instanceMatrix.needsUpdate = true;
+
+        camera.position.x = Math.cos(elapsed * 0.25) * 8;
+        camera.position.z = Math.sin(elapsed * 0.25) * 8;
+        camera.lookAt(0, 0, 0);
+
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nebula Flow</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: radial-gradient(circle at 30% 20%, #1a0838, #03030b 70%);
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="nebula"></canvas>
+    <div class="overlay">Nebula Flow</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('nebula');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x060214, 0.22);
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 50);
+      camera.position.set(0, 0, 7);
+
+      const starCount = 2000;
+      const positions = new Float32Array(starCount * 3);
+      const colors = new Float32Array(starCount * 3);
+      const colorInside = new THREE.Color('#7f5af0');
+      const colorOutside = new THREE.Color('#38d5ff');
+
+      for (let i = 0; i < starCount; i += 1) {
+        const radius = Math.random() * 3 + 1;
+        const angle = Math.random() * Math.PI * 2;
+        const spin = radius * 0.5;
+        const branch = (i % 3) * ((Math.PI * 2) / 3);
+
+        const randomX = Math.pow(Math.random(), 2) * (Math.random() < 0.5 ? 1 : -1);
+        const randomY = Math.pow(Math.random(), 2) * (Math.random() < 0.5 ? 1 : -1);
+        const randomZ = Math.pow(Math.random(), 2) * (Math.random() < 0.5 ? 1 : -1);
+
+        positions[i * 3] = Math.cos(branch + angle + spin) * radius + randomX;
+        positions[i * 3 + 1] = randomY * 0.8;
+        positions[i * 3 + 2] = Math.sin(branch + angle + spin) * radius + randomZ;
+
+        const mixedColor = colorInside.clone();
+        mixedColor.lerp(colorOutside, radius / 4);
+        colors[i * 3] = mixedColor.r;
+        colors[i * 3 + 1] = mixedColor.g;
+        colors[i * 3 + 2] = mixedColor.b;
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const material = new THREE.PointsMaterial({
+        size: 0.045,
+        sizeAttenuation: true,
+        depthWrite: false,
+        vertexColors: true,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+      });
+
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+
+      const light = new THREE.PointLight(0xff77aa, 4, 20);
+      light.position.set(0, 0, 6);
+      scene.add(light);
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+        points.rotation.y = elapsed * 0.08;
+        points.rotation.x = Math.sin(elapsed * 0.2) * 0.1;
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>
