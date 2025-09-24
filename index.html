@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebGL Portfolio</title>
+    <meta
+      name="description"
+      content="WebGLとThree.jsで制作した作品を紹介するインタラクティブなポートフォリオサイト"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="logo">WebGL<span>Works</span></div>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav">
+        <span class="sr-only">メニュー</span>
+        <span class="nav-line"></span>
+        <span class="nav-line"></span>
+        <span class="nav-line"></span>
+      </button>
+      <nav id="site-nav" class="site-nav" data-visible="false">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#works">Works</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="home" class="hero">
+        <canvas id="hero-canvas" aria-hidden="true"></canvas>
+        <div class="hero-content">
+          <p class="eyebrow">Immersive WebGL Creations</p>
+          <h1>
+            惹きつける<span>インタラクティブ</span>体験を、<br />
+            Three.jsでデザインします。
+          </h1>
+          <p class="lead">
+            リアルタイム3D、ジェネレーティブアート、ビジュアルストーリーテリングまで。
+            想像を超える表現をブラウザで。
+          </p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#works">作品を見る</a>
+            <a class="btn ghost" href="#contact">相談する</a>
+          </div>
+        </div>
+        <div class="scroll-indicator">
+          <span>Scroll</span>
+          <div class="scroll-line"></div>
+        </div>
+      </section>
+
+      <section id="about" class="section about">
+        <div class="section-heading">
+          <p class="eyebrow">About</p>
+          <h2>WebGLアーティスト / フロントエンドエンジニア</h2>
+        </div>
+        <div class="about-grid">
+          <div class="about-text">
+            <p>
+              ブラウザで実現できる表現の限界を追求し、インタラクティブなプロジェクトを多数制作。
+              Three.jsをはじめとしたWebGLフレームワークを得意とし、演出・UI・UXまでトータルで設計します。
+            </p>
+            <p>
+              モーションデザイン、シェーダープログラミング、パフォーマンスチューニングを組み合わせ、ビジネス課題を解決する魅力的な体験を提供します。
+            </p>
+            <ul class="skill-list">
+              <li>Three.js / WebGL 2.0</li>
+              <li>GLSL Shader Programming</li>
+              <li>Procedural Animation</li>
+              <li>Creative Coding / Generative Art</li>
+              <li>React / TypeScript / Web Components</li>
+            </ul>
+          </div>
+          <div class="about-card">
+            <h3>制作スタイル</h3>
+            <p>
+              コンセプト設計からプロトタイプ、実装、運用までワンストップで対応。多職種と連携しながら体験価値にフォーカスした開発を行います。
+            </p>
+            <dl class="profile">
+              <div>
+                <dt>拠点</dt>
+                <dd>Tokyo, Remote</dd>
+              </div>
+              <div>
+                <dt>対応可能</dt>
+                <dd>受託開発 / コンサルティング / R&amp;D</dd>
+              </div>
+              <div>
+                <dt>ツール</dt>
+                <dd>Blender, TouchDesigner, After Effects</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <section id="works" class="section works">
+        <div class="section-heading">
+          <p class="eyebrow">Works</p>
+          <h2>WebGL &amp; Three.js Works</h2>
+          <p class="lead">
+            iframeによる埋め込み、またはモーダルで拡大表示できるインタラクティブな作品を紹介します。
+            各プロジェクトはダミーデータで構成されており、簡単に差し替え可能です。
+          </p>
+        </div>
+
+        <div class="works-grid">
+          <article class="work-card" data-target="modal-nebula">
+            <div class="work-thumbnail">
+              <iframe src="works/nebula.html" title="Nebula Flow preview" loading="lazy"></iframe>
+            </div>
+            <div class="work-body">
+              <h3>Nebula Flow</h3>
+              <p>
+                パーティクルで描く銀河空間。マウス操作に反応して軌跡が変化する没入感の高いデモ。
+              </p>
+              <button class="btn ghost open-modal" type="button">モーダルで見る</button>
+            </div>
+          </article>
+
+          <article class="work-card" data-target="modal-ocean">
+            <div class="work-thumbnail">
+              <iframe src="works/ocean.html" title="Tidal Prism preview" loading="lazy"></iframe>
+            </div>
+            <div class="work-body">
+              <h3>Tidal Prism</h3>
+              <p>
+                フラクタルノイズで生成した海原。マテリアルを調整し、幻想的な光の屈折を表現。
+              </p>
+              <button class="btn ghost open-modal" type="button">モーダルで見る</button>
+            </div>
+          </article>
+
+          <article class="work-card" data-target="modal-city">
+            <div class="work-thumbnail">
+              <iframe src="works/city.html" title="Synth City preview" loading="lazy"></iframe>
+            </div>
+            <div class="work-body">
+              <h3>Synth City</h3>
+              <p>
+                低ポリゴンのビル群をリズミカルにライトアップ。音楽連動演出のプロトタイプ。
+              </p>
+              <button class="btn ghost open-modal" type="button">モーダルで見る</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="contact" class="section contact">
+        <div class="section-heading">
+          <p class="eyebrow">Contact</p>
+          <h2>プロジェクトのご相談・お問い合わせ</h2>
+        </div>
+        <div class="contact-grid">
+          <div>
+            <p>
+              コラボレーションや新規案件のご相談はメールまたはSNSのダイレクトメッセージからお気軽にどうぞ。案件内容や予算感など、差し支えない範囲でお知らせください。
+            </p>
+            <ul class="contact-list">
+              <li>
+                <span>Mail</span>
+                <a href="mailto:hello@example.com">hello@example.com</a>
+              </li>
+              <li>
+                <span>Twitter</span>
+                <a href="https://twitter.com/" target="_blank" rel="noreferrer">@yourhandle</a>
+              </li>
+              <li>
+                <span>GitHub</span>
+                <a href="https://github.com/" target="_blank" rel="noreferrer">github.com/yourname</a>
+              </li>
+            </ul>
+          </div>
+          <form class="contact-form" aria-label="お問い合わせフォーム">
+            <label>
+              <span>お名前</span>
+              <input type="text" name="name" placeholder="山田 太郎" required />
+            </label>
+            <label>
+              <span>メールアドレス</span>
+              <input type="email" name="email" placeholder="hello@example.com" required />
+            </label>
+            <label>
+              <span>メッセージ</span>
+              <textarea name="message" rows="4" placeholder="プロジェクトの概要をお聞かせください"></textarea>
+            </label>
+            <button class="btn primary" type="submit">送信する</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; <span id="year"></span> WebGL Works. All rights reserved.</p>
+    </footer>
+
+    <div class="modal" id="modal-nebula" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-content" role="document">
+        <button class="modal-close" type="button" aria-label="閉じる" data-close>&times;</button>
+        <iframe src="works/nebula.html" title="Nebula Flow" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-ocean" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-content" role="document">
+        <button class="modal-close" type="button" aria-label="閉じる" data-close>&times;</button>
+        <iframe src="works/ocean.html" title="Tidal Prism" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-city" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-content" role="document">
+        <button class="modal-close" type="button" aria-label="閉じる" data-close>&times;</button>
+        <iframe src="works/city.html" title="Synth City" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <script type="module" src="scripts/main.js"></script>
+  </body>
+</html>
