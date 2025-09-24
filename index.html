@@ -17,6 +17,13 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="demo-banner" role="note">
+      <span aria-hidden="true">⚠️</span>
+      <span>
+        <strong>デモサイトのご案内:</strong>
+        このポートフォリオはダミーコンテンツで構成されています。テキストや作品は自由に差し替えてご利用ください。
+      </span>
+    </div>
     <header class="site-header">
       <div class="logo">WebGL<span>Works</span></div>
       <button class="nav-toggle" aria-expanded="false" aria-controls="site-nav">
@@ -151,6 +158,32 @@
               <button class="btn ghost open-modal" type="button">モーダルで見る</button>
             </div>
           </article>
+
+          <article class="work-card" data-target="modal-aurora">
+            <div class="work-thumbnail">
+              <iframe src="works/aurora.html" title="Aurora Trails preview" loading="lazy"></iframe>
+            </div>
+            <div class="work-body">
+              <h3>Aurora Trails</h3>
+              <p>
+                シェーダーで描くオーロラのリボン。複数レイヤーの波が時間変化する幻想的なライティングデモ。
+              </p>
+              <button class="btn ghost open-modal" type="button">モーダルで見る</button>
+            </div>
+          </article>
+
+          <article class="work-card" data-target="modal-orbit">
+            <div class="work-thumbnail">
+              <iframe src="works/orbit.html" title="Orbital Bloom preview" loading="lazy"></iframe>
+            </div>
+            <div class="work-body">
+              <h3>Orbital Bloom</h3>
+              <p>
+                中心コアを囲む衛星群が軌道を描きながら光り輝く、データアート風のジェネレーティブアニメーション。
+              </p>
+              <button class="btn ghost open-modal" type="button">モーダルで見る</button>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -223,6 +256,22 @@
       <div class="modal-content" role="document">
         <button class="modal-close" type="button" aria-label="閉じる" data-close>&times;</button>
         <iframe src="works/city.html" title="Synth City" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-aurora" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-content" role="document">
+        <button class="modal-close" type="button" aria-label="閉じる" data-close>&times;</button>
+        <iframe src="works/aurora.html" title="Aurora Trails" loading="lazy"></iframe>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-orbit" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-content" role="document">
+        <button class="modal-close" type="button" aria-label="閉じる" data-close>&times;</button>
+        <iframe src="works/orbit.html" title="Orbital Bloom" loading="lazy"></iframe>
       </div>
     </div>
 

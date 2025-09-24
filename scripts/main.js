@@ -1,5 +1,5 @@
-import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
-import { OrbitControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js?module';
+import { OrbitControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js?module';
 
 const canvas = document.getElementById('hero-canvas');
 const heroSection = document.querySelector('.hero');
