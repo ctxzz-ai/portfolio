@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tidal Prism</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: radial-gradient(circle at 60% 20%, #042046, #01040f 70%);
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        top: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        background: rgba(0, 10, 25, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.75);
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        font-size: clamp(0.55rem, 1.4vw, 0.75rem);
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="ocean"></canvas>
+    <div class="overlay">Tidal Prism</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('ocean');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color('#020615');
+
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 2.4, 5.4);
+
+      const geometry = new THREE.PlaneGeometry(8, 8, 200, 200);
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+          uTintA: { value: new THREE.Color('#2a6fff') },
+          uTintB: { value: new THREE.Color('#2dfdff') },
+        },
+        transparent: true,
+        side: THREE.DoubleSide,
+        vertexShader: /* glsl */ `
+          uniform float uTime;
+          varying float vElevation;
+
+          float fbm(vec2 st) {
+            float value = 0.0;
+            float amplitude = 0.5;
+            float frequency = 0.0;
+            for (int i = 0; i < 5; i++) {
+              value += amplitude * sin(st.x + uTime * (0.5 + frequency)) * cos(st.y + uTime * (0.35 + frequency));
+              st *= 1.8;
+              amplitude *= 0.5;
+              frequency += 0.2;
+            }
+            return value;
+          }
+
+          void main() {
+            vec3 pos = position;
+            float elevation = fbm(pos.xy * 0.6);
+            elevation += sin(pos.x * 0.4 + uTime * 1.2) * 0.25;
+            elevation += cos(pos.y * 0.6 + uTime * 0.9) * 0.2;
+            pos.z = elevation * 0.6;
+            vElevation = elevation;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uTintA;
+          uniform vec3 uTintB;
+          varying float vElevation;
+
+          void main() {
+            float mixStrength = smoothstep(-0.4, 0.6, vElevation);
+            vec3 color = mix(uTintA, uTintB, mixStrength);
+            float fresnel = pow(1.0 - abs(vElevation), 2.0);
+            vec3 finalColor = color + vec3(0.12, 0.18, 0.35) * fresnel;
+            gl_FragColor = vec4(finalColor, 0.94);
+          }
+        `,
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.x = -Math.PI / 2;
+      scene.add(mesh);
+
+      const light = new THREE.DirectionalLight('#6ff2ff', 1.2);
+      light.position.set(-2, 3, 2);
+      scene.add(light);
+      scene.add(new THREE.AmbientLight('#0f1b3f', 0.6));
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+        material.uniforms.uTime.value = elapsed;
+        camera.position.x = Math.sin(elapsed * 0.35) * 2.4;
+        camera.lookAt(0, 0, 0);
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>
