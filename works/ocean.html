@@ -65,7 +65,6 @@
         side: THREE.DoubleSide,
         vertexShader: /* glsl */ `
           uniform float uTime;
-          varying vec3 vPosition;
           varying float vElevation;
 
           float fbm(vec2 st) {
@@ -83,12 +82,11 @@
 
           void main() {
             vec3 pos = position;
-            float elevation = fbm(pos.xz * 0.6);
+            float elevation = fbm(pos.xy * 0.6);
             elevation += sin(pos.x * 0.4 + uTime * 1.2) * 0.25;
-            elevation += cos(pos.z * 0.6 + uTime * 0.9) * 0.2;
-            pos.y = elevation * 0.6;
+            elevation += cos(pos.y * 0.6 + uTime * 0.9) * 0.2;
+            pos.z = elevation * 0.6;
             vElevation = elevation;
-            vPosition = pos;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
           }
         `,
