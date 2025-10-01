@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aurora Trails</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: radial-gradient(circle at 20% 10%, #041225, #02030a 65%);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: min(8vh, 3.5rem);
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.32em;
+        color: rgba(214, 235, 255, 0.7);
+        font-size: clamp(0.55rem, 1.4vw, 0.75rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="aurora"></canvas>
+    <div class="overlay">Aurora Trails</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('aurora');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x020713, 0.08);
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 40);
+      camera.position.set(0, 2.8, 7.5);
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      const planeGeometry = new THREE.PlaneGeometry(12, 6, 200, 160);
+
+      function createRibbon({ colorA, colorB, offset, height, tilt }) {
+        const material = new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: { value: 0 },
+            uColorA: { value: new THREE.Color(colorA) },
+            uColorB: { value: new THREE.Color(colorB) },
+            uOffset: { value: offset },
+          },
+          transparent: true,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          vertexShader: /* glsl */ `
+            uniform float uTime;
+            uniform float uOffset;
+            varying vec2 vUv;
+            varying float vGlow;
+
+            float fbm(vec2 st) {
+              float value = 0.0;
+              float amplitude = 0.45;
+              vec2 shift = vec2(100.0);
+              mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
+
+              for (int i = 0; i < 5; i++) {
+                value += amplitude * sin(st.x + uOffset + float(i) * 0.7 + uTime * 0.6) *
+                         cos(st.y + uOffset * 0.6 + float(i) * 0.35 + uTime * 0.85);
+                st = rot * st * 1.6 + shift;
+                amplitude *= 0.55;
+              }
+              return value;
+            }
+
+            void main() {
+              vUv = uv;
+              vec3 pos = position;
+              float ripple = fbm(vec2(pos.x * 0.6, pos.y * 0.9));
+              pos.z += ripple * 1.2;
+              pos.y += sin(pos.x * 1.4 + uTime * 0.9 + uOffset) * 0.6;
+              pos.y *= 0.8;
+              vGlow = smoothstep(0.0, 1.0, uv.y + ripple * 0.1);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            }
+          `,
+          fragmentShader: /* glsl */ `
+            uniform vec3 uColorA;
+            uniform vec3 uColorB;
+            varying vec2 vUv;
+            varying float vGlow;
+
+            void main() {
+              float alpha = smoothstep(0.0, 1.0, vGlow) * 0.85;
+              vec3 color = mix(uColorA, uColorB, vUv.y + sin(vUv.x * 6.0) * 0.05);
+              gl_FragColor = vec4(color, alpha);
+            }
+          `,
+        });
+
+        const mesh = new THREE.Mesh(planeGeometry, material);
+        mesh.position.y = height;
+        mesh.rotation.x = tilt;
+        group.add(mesh);
+        return { mesh, material };
+      }
+
+      const ribbons = [
+        createRibbon({ colorA: '#6cf7ff', colorB: '#4588ff', offset: 0.0, height: -0.4, tilt: -Math.PI / 3.4 }),
+        createRibbon({ colorA: '#f39fff', colorB: '#52c4ff', offset: 2.4, height: 0.15, tilt: -Math.PI / 3.1 }),
+        createRibbon({ colorA: '#8cffd4', colorB: '#3b8bff', offset: 4.5, height: 0.55, tilt: -Math.PI / 3.2 }),
+      ];
+
+      const starGeometry = new THREE.BufferGeometry();
+      const starCount = 1400;
+      const starPositions = new Float32Array(starCount * 3);
+      const starSizes = new Float32Array(starCount);
+      for (let i = 0; i < starCount; i += 1) {
+        starPositions[i * 3] = THREE.MathUtils.randFloatSpread(18);
+        starPositions[i * 3 + 1] = THREE.MathUtils.randFloat(2, 8);
+        starPositions[i * 3 + 2] = THREE.MathUtils.randFloatSpread(18);
+        starSizes[i] = THREE.MathUtils.randFloat(0.2, 0.9);
+      }
+      starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+      starGeometry.setAttribute('aScale', new THREE.BufferAttribute(starSizes, 1));
+
+      const starMaterial = new THREE.PointsMaterial({
+        color: 0xaed7ff,
+        size: 0.05,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 0.8,
+      });
+
+      const stars = new THREE.Points(starGeometry, starMaterial);
+      stars.position.y = 1.5;
+      scene.add(stars);
+
+      const groundGeometry = new THREE.PlaneGeometry(40, 40, 1, 1);
+      const groundMaterial = new THREE.MeshBasicMaterial({
+        color: 0x02040c,
+      });
+      const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -2.8;
+      scene.add(ground);
+
+      const ambient = new THREE.AmbientLight(0x668cff, 0.3);
+      const directional = new THREE.DirectionalLight(0x7ad9ff, 0.8);
+      directional.position.set(-4, 6, 4);
+      scene.add(ambient, directional);
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+        ribbons.forEach(({ material, mesh }, index) => {
+          material.uniforms.uTime.value = elapsed + index * 0.8;
+          mesh.position.x = Math.sin(elapsed * 0.12 + index) * 0.3;
+        });
+        group.rotation.y = Math.sin(elapsed * 0.05) * 0.15;
+        stars.rotation.y += 0.0008;
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      animate();
+    </script>
+  </body>
+</html>

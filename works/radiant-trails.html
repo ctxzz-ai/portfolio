@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Radiant Trails</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(circle at 40% 10%, #130714, #020108 65%);
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: rgba(255, 214, 255, 0.7);
+        font-size: clamp(0.5rem, 1vw, 0.7rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="trails"></canvas>
+    <div class="overlay">Radiant Trails</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('trails'), antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 80);
+      camera.position.set(0, 0, 10);
+
+      const trails = [];
+      const trailCount = 24;
+      const curvePoints = 120;
+
+      const gradient = [
+        new THREE.Color('#ff62d4'),
+        new THREE.Color('#ff8b7b'),
+        new THREE.Color('#ffd35f'),
+      ];
+
+      function createTrail(offset) {
+        const positions = new Float32Array(curvePoints * 3);
+        const colors = new Float32Array(curvePoints * 3);
+        const geometry = new THREE.BufferGeometry();
+
+        for (let i = 0; i < curvePoints; i += 1) {
+          const t = i / (curvePoints - 1);
+          const angle = t * Math.PI * 4 + offset;
+          const radius = 2.5 + Math.sin(t * Math.PI * 2 + offset) * 1.1;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(t * Math.PI * 2 + offset) * 1.6;
+          const z = Math.sin(angle * 0.7 + offset) * 2.5;
+          positions[i * 3] = x;
+          positions[i * 3 + 1] = y;
+          positions[i * 3 + 2] = z;
+
+          const colorIndex = Math.floor(t * (gradient.length - 1));
+          const lerpT = (t * (gradient.length - 1)) % 1;
+          const c1 = gradient[colorIndex];
+          const c2 = gradient[Math.min(colorIndex + 1, gradient.length - 1)];
+          const color = c1.clone().lerp(c2, lerpT);
+          colors[i * 3] = color.r;
+          colors[i * 3 + 1] = color.g;
+          colors[i * 3 + 2] = color.b;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.LineBasicMaterial({
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.8,
+          linewidth: 2,
+        });
+
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        trails.push({ line, offset });
+      }
+
+      for (let i = 0; i < trailCount; i += 1) {
+        createTrail((i / trailCount) * Math.PI * 2);
+      }
+
+      const particleGeometry = new THREE.BufferGeometry();
+      const particleCount = 1200;
+      const particlePositions = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount; i += 1) {
+        const radius = THREE.MathUtils.randFloat(3, 10);
+        const theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
+        const phi = Math.acos(THREE.MathUtils.randFloatSpread(2));
+        particlePositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        particlePositions[i * 3 + 1] = radius * Math.cos(phi);
+        particlePositions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+      }
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+      const particles = new THREE.Points(
+        particleGeometry,
+        new THREE.PointsMaterial({ color: 0xff88f0, size: 0.04, sizeAttenuation: true, transparent: true, opacity: 0.6 })
+      );
+      scene.add(particles);
+
+      const clock = new THREE.Clock();
+
+      const lights = [
+        new THREE.PointLight(0xff62d4, 5, 25),
+        new THREE.PointLight(0xff8b7b, 4, 20),
+        new THREE.PointLight(0xffd35f, 4, 20),
+      ];
+      lights[0].position.set(5, 4, 6);
+      lights[1].position.set(-5, -3, 4);
+      lights[2].position.set(0, 3, -5);
+      lights.forEach((light) => scene.add(light));
+      scene.add(new THREE.AmbientLight(0x241221, 0.6));
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+        trails.forEach(({ line, offset }) => {
+          const positions = line.geometry.attributes.position;
+          for (let i = 0; i < positions.count; i += 1) {
+            const t = i / (positions.count - 1);
+            const angle = t * Math.PI * 4 + offset + elapsed * 0.3;
+            const radius = 2.5 + Math.sin(t * Math.PI * 2 + offset + elapsed * 0.6) * 1.1;
+            positions.setXYZ(
+              i,
+              Math.cos(angle) * radius,
+              Math.sin(t * Math.PI * 2 + offset + elapsed * 0.4) * 1.6,
+              Math.sin(angle * 0.7 + offset + elapsed * 0.5) * 2.5
+            );
+          }
+          positions.needsUpdate = true;
+        });
+        particles.rotation.y = elapsed * 0.08;
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zenith Rings</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 15%, #070919, #010208 70%);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: rgba(200, 236, 255, 0.7);
+        font-size: clamp(0.5rem, 0.95vw, 0.7rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="rings"></canvas>
+    <div class="overlay">Zenith Rings</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('rings'), antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 12);
+
+      const ringGroup = new THREE.Group();
+      scene.add(ringGroup);
+
+      const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x44f2ff, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+
+      const ringLayers = 6;
+      for (let i = 0; i < ringLayers; i += 1) {
+        const inner = 2 + i * 0.6;
+        const outer = inner + 0.3;
+        const ring = new THREE.Mesh(new THREE.RingGeometry(inner, outer, 160), ringMaterial.clone());
+        ring.rotation.x = Math.PI / 2;
+        ring.material.opacity = 0.35 - i * 0.04;
+        ringGroup.add(ring);
+      }
+
+      const barsGeometry = new THREE.CylinderGeometry(0.08, 0.08, 8, 16, 1, true);
+      const barsMaterial = new THREE.MeshStandardMaterial({ color: 0x88e7ff, emissive: 0x08384a, roughness: 0.2, metalness: 0.6 });
+      const bars = new THREE.InstancedMesh(barsGeometry, barsMaterial, 120);
+      const dummy = new THREE.Object3D();
+
+      for (let i = 0; i < 120; i += 1) {
+        const angle = (i / 120) * Math.PI * 2;
+        const radius = THREE.MathUtils.randFloat(2.5, 5.2);
+        dummy.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+        dummy.rotation.set(Math.PI / 2, 0, angle);
+        dummy.scale.setScalar(THREE.MathUtils.randFloat(0.8, 1.2));
+        dummy.updateMatrix();
+        bars.setMatrixAt(i, dummy.matrix);
+      }
+      ringGroup.add(bars);
+
+      const coreGeometry = new THREE.SphereGeometry(1.2, 32, 32);
+      const coreMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x6effff,
+        emissive: 0x0a1f2e,
+        emissiveIntensity: 0.8,
+        roughness: 0.1,
+        transmission: 0.7,
+        transparent: true,
+      });
+      const core = new THREE.Mesh(coreGeometry, coreMaterial);
+      scene.add(core);
+
+      const particlesGeometry = new THREE.BufferGeometry();
+      const count = 1800;
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i += 1) {
+        const radius = THREE.MathUtils.randFloat(4, 12);
+        const theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
+        const phi = Math.acos(THREE.MathUtils.randFloatSpread(2));
+        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = radius * Math.cos(phi);
+        positions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+      }
+      particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const particles = new THREE.Points(
+        particlesGeometry,
+        new THREE.PointsMaterial({ color: 0x9bf7ff, size: 0.045, sizeAttenuation: true, transparent: true, opacity: 0.65 })
+      );
+      scene.add(particles);
+
+      const lights = [
+        new THREE.PointLight(0x6effff, 6, 30),
+        new THREE.PointLight(0x2f9dff, 5, 25),
+      ];
+      lights[0].position.set(4, 6, 6);
+      lights[1].position.set(-5, -4, -5);
+      lights.forEach((light) => scene.add(light));
+      scene.add(new THREE.AmbientLight(0x0f1a2a, 0.6));
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const time = clock.getElapsedTime();
+        ringGroup.children.forEach((child, index) => {
+          child.rotation.z = time * (0.08 + index * 0.02);
+        });
+        bars.rotation.y = time * 0.25;
+        bars.instanceMatrix.needsUpdate = true;
+        core.rotation.y = time * 0.35;
+        particles.rotation.y = time * 0.05;
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>

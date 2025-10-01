@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pulse Grid</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 20%, #040811, #010208 70%);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.65);
+        font-size: clamp(0.52rem, 1vw, 0.7rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="pulse"></canvas>
+    <div class="overlay">Pulse Grid</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('pulse'), antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x02040a);
+
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(8, 7, 11);
+      camera.lookAt(0, 0, 0);
+
+      const gridSize = 12;
+      const spacing = 0.9;
+      const geometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+      const material = new THREE.MeshStandardMaterial({
+        color: 0x2ac7ff,
+        emissive: 0x041a2f,
+        metalness: 0.2,
+        roughness: 0.4,
+      });
+
+      const instances = gridSize * gridSize;
+      const instanced = new THREE.InstancedMesh(geometry, material, instances);
+      const dummy = new THREE.Object3D();
+      let index = 0;
+      const offsets = [];
+
+      for (let x = 0; x < gridSize; x += 1) {
+        for (let z = 0; z < gridSize; z += 1) {
+          const offsetX = (x - gridSize / 2) * spacing;
+          const offsetZ = (z - gridSize / 2) * spacing;
+          dummy.position.set(offsetX, 0, offsetZ);
+          dummy.updateMatrix();
+          instanced.setMatrixAt(index, dummy.matrix);
+          offsets.push({ index, x, z });
+          index += 1;
+        }
+      }
+      scene.add(instanced);
+
+      const floor = new THREE.Mesh(
+        new THREE.CircleGeometry(8.5, 64),
+        new THREE.MeshBasicMaterial({ color: 0x0a1d2d, transparent: true, opacity: 0.45 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -0.45;
+      scene.add(floor);
+
+      const lights = [
+        new THREE.PointLight(0x2ac7ff, 6, 40),
+        new THREE.PointLight(0x4277ff, 4, 30),
+        new THREE.PointLight(0x6a30ff, 5, 35),
+      ];
+      lights[0].position.set(6, 9, 4);
+      lights[1].position.set(-6, 8, -4);
+      lights[2].position.set(0, 6, 8);
+      lights.forEach((light) => scene.add(light));
+      scene.add(new THREE.AmbientLight(0x101628, 0.5));
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const time = clock.getElapsedTime();
+        offsets.forEach(({ index: i, x, z }) => {
+          const wave = Math.sin(time * 2.2 + (x * 0.35 + z * 0.4));
+          const scale = THREE.MathUtils.mapLinear(wave, -1, 1, 0.3, 1.8);
+          dummy.position.set((x - gridSize / 2) * spacing, scale * 0.4, (z - gridSize / 2) * spacing);
+          dummy.scale.set(1, scale, 1);
+          dummy.updateMatrix();
+          instanced.setMatrixAt(i, dummy.matrix);
+        });
+        instanced.instanceMatrix.needsUpdate = true;
+        instanced.rotation.y = time * 0.25;
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>

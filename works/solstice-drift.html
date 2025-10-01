@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Solstice Drift</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 15%, #150b18, #05010a 65%);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 220, 245, 0.7);
+        font-size: clamp(0.52rem, 0.95vw, 0.7rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="solstice"></canvas>
+    <div class="overlay">Solstice Drift</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('solstice'), antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 60);
+      camera.position.set(0, 0, 8);
+
+      const geometry = new THREE.PlaneGeometry(10, 6, 200, 120);
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+        },
+        vertexShader: /* glsl */ `
+          uniform float uTime;
+          varying vec2 vUv;
+          varying float vHeight;
+          float noise(vec2 p) {
+            return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+          }
+          float fbm(vec2 p) {
+            float value = 0.0;
+            float amplitude = 0.5;
+            for (int i = 0; i < 5; i++) {
+              value += amplitude * noise(p);
+              p *= 2.0;
+              amplitude *= 0.5;
+            }
+            return value;
+          }
+          void main() {
+            vUv = uv;
+            vec3 pos = position;
+            float flow = fbm(pos.xy * 0.8 + uTime * 0.3);
+            float swirl = fbm(pos.yx * 1.2 - uTime * 0.25);
+            float height = flow * 0.5 + swirl * 0.5;
+            vHeight = height;
+            pos.z += (height - 0.4) * 1.4;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          varying vec2 vUv;
+          varying float vHeight;
+          void main() {
+            vec3 base = mix(vec3(0.16, 0.07, 0.28), vec3(0.82, 0.31, 0.56), smoothstep(0.1, 0.9, vUv.x));
+            float glow = smoothstep(0.3, 0.85, vHeight);
+            vec3 color = mix(base, vec3(0.98, 0.78, 0.96), glow);
+            gl_FragColor = vec4(color, 0.95);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+      });
+
+      const plane = new THREE.Mesh(geometry, material);
+      scene.add(plane);
+
+      const particlesGeometry = new THREE.BufferGeometry();
+      const count = 1500;
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i += 1) {
+        const radius = THREE.MathUtils.randFloat(2.5, 6.5);
+        const angle = THREE.MathUtils.randFloat(0, Math.PI * 2);
+        const y = THREE.MathUtils.randFloatSpread(3.5);
+        positions[i * 3] = Math.cos(angle) * radius;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = Math.sin(angle) * radius;
+      }
+      particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const particles = new THREE.Points(
+        particlesGeometry,
+        new THREE.PointsMaterial({ color: 0xff9bf8, size: 0.04, sizeAttenuation: true, transparent: true, opacity: 0.6 })
+      );
+      scene.add(particles);
+
+      const lights = [
+        new THREE.PointLight(0xff77e5, 5, 22),
+        new THREE.PointLight(0x8035ff, 4, 20),
+      ];
+      lights[0].position.set(4, 4, 6);
+      lights[1].position.set(-4, -3, -5);
+      lights.forEach((light) => scene.add(light));
+      scene.add(new THREE.AmbientLight(0x200b28, 0.6));
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const time = clock.getElapsedTime();
+        material.uniforms.uTime.value = time;
+        plane.rotation.x = Math.sin(time * 0.25) * 0.1;
+        plane.rotation.y = Math.cos(time * 0.18) * 0.15;
+        particles.rotation.y = time * 0.05;
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>
