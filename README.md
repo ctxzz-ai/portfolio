@@ -1,6 +1,6 @@
 # WebGL Portfolio
 
-インタラクティブなWebGLデモを紹介するポートフォリオサイトです。Three.jsを用いたヒーローセクションと5つの作品デモを含み、GitHub Pagesへそのままデプロイできます。テキストや埋め込みコンテンツはダミーのため、後から簡単に置き換え可能です。
+インタラクティブなWebGLデモを紹介するポートフォリオサイトです。
 
 ## 特長
 
@@ -18,11 +18,21 @@
 ├── scripts/
 │   └── main.js       # ヒーローセクション、モーダル、ナビ等の振る舞い
 ├── works/            # 作品デモ(iframe表示用)
+│   ├── aurora.html
+│   ├── city.html
+│   ├── crystal-forest.html
+│   ├── ember-swell.html
+│   ├── flux-bloom.html
 │   ├── nebula.html
 │   ├── ocean.html
-│   ├── city.html
-│   ├── aurora.html
-│   └── orbit.html
+│   ├── orbit.html
+│   ├── prism-halo.html
+│   ├── pulse-grid.html
+│   ├── radiant-trails.html
+│   ├── ripple-field.html
+│   ├── solstice-drift.html
+│   ├── velvet-currents.html
+│   └── zenith-rings.html
 └── README.md
 ```
 

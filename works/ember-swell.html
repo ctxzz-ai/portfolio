@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ember Swell</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(circle at 45% 10%, #1a0903, #050100 70%);
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(255, 205, 170, 0.7);
+        font-size: clamp(0.52rem, 1vw, 0.72rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="ember"></canvas>
+    <div class="overlay">Ember Swell</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('ember'), antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 10);
+
+      const torusGeometry = new THREE.TorusKnotGeometry(2.3, 0.6, 240, 18, 2, 5);
+      const torusMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff8b3d,
+        emissive: 0x301002,
+        emissiveIntensity: 0.9,
+        metalness: 0.6,
+        roughness: 0.3,
+      });
+      const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+      scene.add(torus);
+
+      const glowGeometry = new THREE.TorusGeometry(4.2, 0.08, 16, 120);
+      const glowMaterial = new THREE.MeshBasicMaterial({ color: 0xffae54, transparent: true, opacity: 0.25 });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      glow.rotation.x = Math.PI / 2;
+      scene.add(glow);
+
+      const sparksGeometry = new THREE.BufferGeometry();
+      const sparkCount = 1600;
+      const positions = new Float32Array(sparkCount * 3);
+      const speeds = new Float32Array(sparkCount);
+
+      for (let i = 0; i < sparkCount; i += 1) {
+        const radius = THREE.MathUtils.randFloat(1, 6);
+        const angle = THREE.MathUtils.randFloat(0, Math.PI * 2);
+        const height = THREE.MathUtils.randFloatSpread(3);
+        positions[i * 3] = Math.cos(angle) * radius;
+        positions[i * 3 + 1] = height;
+        positions[i * 3 + 2] = Math.sin(angle) * radius;
+        speeds[i] = THREE.MathUtils.randFloat(0.4, 1.2);
+      }
+
+      sparksGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      sparksGeometry.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
+
+      const sparksMaterial = new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: /* glsl */ `
+          uniform float uTime;
+          attribute float aSpeed;
+          void main() {
+            vec3 transformed = position;
+            transformed.y += sin(uTime * aSpeed + position.x * 0.5) * 0.6;
+            transformed.x += cos(uTime * aSpeed * 0.5 + position.y * 0.6) * 0.2;
+            transformed.z += sin(uTime * aSpeed * 0.7 + position.z * 0.4) * 0.2;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+            gl_PointSize = 3.2;
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          void main() {
+            float dist = length(gl_PointCoord - 0.5);
+            float alpha = smoothstep(0.5, 0.0, dist);
+            gl_FragColor = vec4(1.0, 0.58, 0.24, alpha * 0.85);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+
+      const sparks = new THREE.Points(sparksGeometry, sparksMaterial);
+      scene.add(sparks);
+
+      const lights = [
+        new THREE.PointLight(0xff7f45, 6, 25),
+        new THREE.PointLight(0xffef9a, 4, 20),
+        new THREE.PointLight(0xff3f2e, 4, 20),
+      ];
+      lights[0].position.set(5, 4, 6);
+      lights[1].position.set(-4, 3, -4);
+      lights[2].position.set(0, -4, 5);
+      lights.forEach((light) => scene.add(light));
+      scene.add(new THREE.AmbientLight(0x301205, 0.5));
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const time = clock.getElapsedTime();
+        torus.rotation.x = time * 0.28;
+        torus.rotation.y = time * 0.35;
+        glow.rotation.z = time * 0.12;
+        sparksMaterial.uniforms.uTime.value = time;
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>

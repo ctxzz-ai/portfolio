@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prism Halo</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 20%, #101229, #04050b 70%);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: clamp(0.55rem, 1.1vw, 0.7rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <div class="overlay">Prism Halo</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('scene'), antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x050713, 0.16);
+
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 60);
+      camera.position.set(0, 0, 8);
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      const coreGeometry = new THREE.DodecahedronGeometry(1.2, 1);
+      const coreMaterial = new THREE.MeshStandardMaterial({
+        color: 0x5f9bff,
+        roughness: 0.15,
+        metalness: 0.75,
+        emissive: 0x0d1635,
+        emissiveIntensity: 0.4,
+      });
+      const core = new THREE.Mesh(coreGeometry, coreMaterial);
+      group.add(core);
+
+      const prismGeometry = new THREE.IcosahedronGeometry(2.2, 3);
+      const prismMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x8fbcff,
+        transparent: true,
+        opacity: 0.28,
+        roughness: 0.1,
+        metalness: 0.8,
+        transmission: 0.7,
+        thickness: 2.2,
+      });
+      const prism = new THREE.Mesh(prismGeometry, prismMaterial);
+      group.add(prism);
+
+      const particleCount = 1500;
+      const particleGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const colors = new Float32Array(particleCount * 3);
+      const colorInner = new THREE.Color('#70f1ff');
+      const colorOuter = new THREE.Color('#a77bff');
+
+      for (let i = 0; i < particleCount; i += 1) {
+        const radius = THREE.MathUtils.randFloat(3, 9);
+        const theta = THREE.MathUtils.randFloat(0, Math.PI * 2);
+        const phi = Math.acos(THREE.MathUtils.randFloatSpread(2));
+        positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = radius * Math.cos(phi) * 0.8;
+        positions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+
+        const mix = (radius - 3) / 6;
+        const color = colorInner.clone().lerp(colorOuter, mix);
+        colors[i * 3] = color.r;
+        colors[i * 3 + 1] = color.g;
+        colors[i * 3 + 2] = color.b;
+      }
+
+      particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const particleMaterial = new THREE.PointsMaterial({
+        size: 0.05,
+        sizeAttenuation: true,
+        depthWrite: false,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+      });
+      const halo = new THREE.Points(particleGeometry, particleMaterial);
+      group.add(halo);
+
+      const ringGeometry = new THREE.RingGeometry(3.6, 3.9, 96);
+      const ringMaterial = new THREE.MeshBasicMaterial({
+        color: 0x62d6ff,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide,
+      });
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.z = -0.6;
+      group.add(ring);
+
+      const ambient = new THREE.AmbientLight(0x3b4f7f, 0.8);
+      scene.add(ambient);
+
+      const keyLight = new THREE.PointLight(0x6b9bff, 7, 30);
+      keyLight.position.set(4, 6, 6);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.PointLight(0xa18bff, 6, 22);
+      fillLight.position.set(-6, -3, -4);
+      scene.add(fillLight);
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+
+      function animate() {
+        const time = clock.getElapsedTime();
+        core.rotation.x = time * 0.4;
+        core.rotation.y = time * 0.5;
+        prism.rotation.x = -time * 0.25;
+        prism.rotation.y = time * 0.28;
+        ring.rotation.z = time * 0.18;
+        halo.rotation.y = time * 0.12;
+
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>
