@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cyber Glitch</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div class="overlay">Cyber Glitch</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 3);
+
+
+
+
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+
+      // Creating multiple clones for glitch effect
+      const clones = [];
+      for(let i=0; i<5; i++) {
+        const clone = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
+            color: Math.random() > 0.5 ? 0xff00ff : 0x00ffff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.5
+        }));
+        scene.add(clone);
+        clones.push(clone);
+      }
+
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+
+        mesh.rotation.x = elapsed;
+        mesh.rotation.y = elapsed;
+
+        clones.forEach((clone, i) => {
+            clone.rotation.copy(mesh.rotation);
+            if (Math.random() > 0.9) {
+                clone.position.x = (Math.random() - 0.5) * 0.5;
+                clone.position.y = (Math.random() - 0.5) * 0.5;
+                clone.scale.setScalar(1 + Math.random() * 0.2);
+                clone.visible = true;
+            } else {
+                clone.visible = false;
+            }
+        });
+
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Glass Morphism</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: radial-gradient(circle at 50% 50%, #2a2a40, #000000);
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div class="overlay">Glass Morphism</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 5);
+
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+      const pointLight = new THREE.PointLight(0xffffff, 1);
+      pointLight.position.set(5, 5, 5);
+      scene.add(pointLight);
+
+
+
+      const geometry = new THREE.IcosahedronGeometry(1.5, 0);
+      const material = new THREE.MeshNormalMaterial({ wireframe: false }); // Placeholder for glass effect
+      // Better glass effect needs environment map, keeping simple for now or using physical material
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        roughness: 0,
+        transmission: 1,
+        thickness: 0.5,
+        clearcoat: 1,
+        clearcoatRoughness: 0.1,
+      });
+      const mesh = new THREE.Mesh(geometry, glassMaterial);
+      scene.add(mesh);
+
+      const bgGeometry = new THREE.IcosahedronGeometry(3, 1);
+      const bgMaterial = new THREE.MeshBasicMaterial({ color: 0x7f5af0, wireframe: true });
+      const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+      scene.add(bgMesh);
+
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+
+        mesh.rotation.x = elapsed * 0.5;
+        mesh.rotation.y = elapsed * 0.3;
+        bgMesh.rotation.x = -elapsed * 0.2;
+        bgMesh.rotation.y = -elapsed * 0.1;
+
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>
