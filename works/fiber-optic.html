@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fiber Optic</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div class="overlay">Fiber Optic</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 10);
+
+
+
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      for(let i=0; i<50; i++) {
+        const curve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3((Math.random()-0.5)*5, -5, (Math.random()-0.5)*5),
+            new THREE.Vector3((Math.random()-0.5)*2, 0, (Math.random()-0.5)*2),
+            new THREE.Vector3((Math.random()-0.5)*5, 5, (Math.random()-0.5)*5),
+        ]);
+        const pts = curve.getPoints(50);
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const mat = new THREE.LineBasicMaterial({ color: Math.random() > 0.5 ? 0x00ffff : 0xff00ff, opacity: 0.6, transparent: true });
+        const line = new THREE.Line(geo, mat);
+        group.add(line);
+      }
+
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+
+        group.rotation.y = elapsed * 0.2;
+
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>

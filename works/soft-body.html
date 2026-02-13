@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Soft Body</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #ffdddd;
+        overflow: hidden;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        font-family: 'Outfit', sans-serif;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <div class="overlay">Soft Body</div>
+    <script type="module">
+      import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+
+      const canvas = document.getElementById('canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      const scene = new THREE.Scene();
+
+
+      const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 3);
+
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1);
+        scene.add(light);
+        const amb = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(amb);
+
+
+
+      const geometry = new THREE.SphereGeometry(1, 64, 64);
+      const material = new THREE.MeshStandardMaterial({ color: 0xff5555, roughness: 0.4 });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+
+
+      const clock = new THREE.Clock();
+
+      function resize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+
+      }
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+
+        const pos = mesh.geometry.attributes.position;
+        // Jiggle effect
+        mesh.scale.x = 1 + Math.sin(elapsed * 5) * 0.05;
+        mesh.scale.y = 1 + Math.cos(elapsed * 5) * 0.05;
+        mesh.rotation.z = Math.sin(elapsed) * 0.1;
+
+        renderer.render(scene, camera);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      renderer.setAnimationLoop(animate);
+    </script>
+  </body>
+</html>
